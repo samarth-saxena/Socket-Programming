@@ -183,7 +183,6 @@ int main(int argc, char const *argv[])
 	send(sockfd, request, strlen(request), 0);
 	printf("[+] Requested: Top %s processes\n", request);
 
-	receive_file(sockfd);
 
 
 	findProcess();
@@ -192,6 +191,7 @@ int main(int argc, char const *argv[])
 	send(sockfd, message, strlen(message), 0);
 	printf("[+] Sent: \"%s\"\n", message);
 
+	receive_file(sockfd);
 	// valread = recv (sockfd, buffer, SIZE,0);
 	// printf("[+] Received: \"%s\"\n", buffer);
 
