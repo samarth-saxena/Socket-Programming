@@ -38,6 +38,7 @@ void receive_file(int sockfd)
 	FILE *fp;
 	char *filename = "recvd_info.txt";
 	char data[SIZE];
+	char cmd[100];
 
 	fp = fopen(filename, "w");
 	printf("[+] Receiving file...\n");
@@ -45,10 +46,15 @@ void receive_file(int sockfd)
 	while(recv(sockfd, data, SIZE, 0) > 0)
 	{
 		fprintf(fp, "%s", data);
-		printf("    [+] Received line %d\n",i++);
+		// printf("    [+] Received line %d\n",i++);
 	}
 
+	fclose(fp);
+
 	printf("[+] File received\n");
+	sprintf(cmd, "cat %s", filename);
+	system(cmd);
+
 	return;
 }
 
@@ -181,7 +187,7 @@ int main(int argc, char const *argv[])
 
 
 	send(sockfd, request, strlen(request), 0);
-	printf("[+] Requested: Top %s processes\n", request);
+	printf("\n[+] Requested: Top %s processes\n", request);
 
 
 
@@ -203,7 +209,7 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 	else {
-		printf("[+] Socket closed\n");
+		printf("\n[+] Socket closed\n");
 	}
 
 	return 0;

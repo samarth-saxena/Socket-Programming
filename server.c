@@ -16,6 +16,7 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <sys/sendfile.h>
+#include <pthread.h>
 
 
 #define PORT 8080
@@ -23,6 +24,7 @@
 
 int maxPID;
 char *filename = "server_info.txt";
+pthread_mutex_t lock;
 
 
 struct process
@@ -163,19 +165,90 @@ void findProcess()
 	return;
 }
 
+
+void * clientThread (void * arg1) //, void * arg2
+{
+	// int* myTID = (int*) arg1;
+	int mySockFD = *((int*) arg1);
+
+	int recvVal;
+	char *hello = "Hello from server";
+	char strN[10];
+	char buffer[SIZE] = {0};
+	int N;
+	char cmd[100];
+
+
+	//Receiving request for N proceses
+	recvVal = recv (mySockFD, strN, 10, 0);
+	N = atoi(strN);
+	printf("[+] Received: %d\n", N);
+
+	pthread_mutex_lock(&lock);
+
+	findProcess();
+	writeNprocesses(N, filename);
+
+	sprintf(cmd, "cat %s", filename);
+	system(cmd);
+
+
+	//Sending file
+	FILE *fp = fopen(filename, "r");
+	if (fp == NULL)
+	{
+	    perror("[-] File opening error");
+	}
+	else
+	{
+	    // send_file(fp, sockfd);
+	    int n, i=1;
+	    char data[SIZE] = {0};
+
+	    printf("[+] Sending file...\n");
+
+	    while(fgets(data,SIZE, fp)!=NULL)
+	    {
+
+	        if(send(mySockFD, data, sizeof(data),0) == -1)
+	        {
+	            perror("[-] Sending failed");
+	            exit(1);
+	        }
+	        // else {
+	        //     printf("    [+] Sent line %d\n", i++);
+	        // }
+	    }
+		fclose(fp);
+	    printf("[+] File sent\n");
+
+	}
+	pthread_mutex_unlock(&lock);
+
+	
+	//Receiving client message
+	recvVal = recv (mySockFD, buffer, SIZE,0);
+	printf("[+] Received: \"%s\"\n", buffer);
+
+	if(close(mySockFD)<0)
+	{
+		printf("[-] Client socket close failed");
+		exit(1);
+	}
+	else {
+		printf("[+] Client socket closed\n\n");
+	}
+	pthread_exit(NULL);
+
+}
+
+
 int main(int argc, char const *argv[])
 {
-	int sockfd, new_sockfd, valread;
+	int sockfd, new_sockfd;
 	struct sockaddr_in address;
 	int addrlen = sizeof(address);
-	char buffer[SIZE] = {0};
 	int one = 1;
-	char *hello = "Hello from server";
-	char message[100], strN[10];
-	int N;
-
-
-	FILE *fp;
 
 	// Socket setup
 	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -207,6 +280,11 @@ int main(int argc, char const *argv[])
 		printf("[+] Bind successful\n");
 	}
 
+	if (pthread_mutex_init(&lock, NULL) != 0) {
+		perror("[-] Mutex init failed");
+        exit(1);
+    }
+
 	//Listening
 	if( listen(sockfd,5) < 0 )
 	{
@@ -218,60 +296,34 @@ int main(int argc, char const *argv[])
 	}
 
 	maxPID = getMaxPid();
+	pthread_t tid[10];
+	int i=0;
 
-	//Accepting connection
-	if((new_sockfd = accept(sockfd, (struct sockaddr *) &address, (socklen_t *) &addrlen) ) < 0)
+	while((new_sockfd = accept(sockfd, (struct sockaddr *) &address, (socklen_t *) &addrlen) ) >= 0)
 	{
-		perror("[-] Accept failed");
-		exit(1);
-	}
-	else {
-		printf("[+] Connection accepted\n");
-	}
 
-	//Receiving request for N proceses
-	valread = recv (new_sockfd, strN, 10, 0);
-	N = atoi(strN);
-	printf("[+] Received: %d\n", N);
-
-	findProcess();
-	writeNprocesses(N, filename);
-
-
-	//Sending file
-	fp = fopen(filename, "r");
-	if (fp == NULL)
-	{
-	    perror("[-] File opening error");
-	}
-	else
-	{
-	    // send_file(fp, sockfd);
-	    int n, i=1;
-	    char data[SIZE] = {0};
-
-	    printf("[+] Sending file...\n");
-
-	    while(fgets(data,SIZE, fp)!=NULL)
-	    {
-
-	        if(send(new_sockfd, data, sizeof(data),0) == -1)
-	        {
-	            perror("[-] Sending failed");
-	            exit(1);
-	        }
-	        else {
-	            printf("    [+] Sent line %d\n", i++);
-	        }
-	    }
-	    printf("[+] File sent\n");
+		//Accepting connection
+		// if((new_sockfd = accept(sockfd, (struct sockaddr *) &address, (socklen_t *) &addrlen) ) < 0)
+		// {
+		// 	perror("[-] Accept failed");
+		// 	exit(1);
+		// }
+		// else {
+			printf("\n[+] Connection accepted\n");
+			if( pthread_create(&tid[i], NULL, clientThread, &new_sockfd) != 0 )
+			{
+        		printf("Failed to create thread\n");
+			}
+			else {
+				printf("[+] Client %u thread created\n", tid[i]);
+			}
+			i++;
+		// }
 
 	}
 
-	
-	//Receiving client message
-	valread = recv (new_sockfd, buffer, SIZE,0);
-	printf("[+] Received: \"%s\"\n", buffer);
+	//pthread_join(tid[],NULL);
+	// pthread_mutex_destroy(&lock);
 
 	if(close(sockfd)<0)
 	{
