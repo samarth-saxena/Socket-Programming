@@ -25,6 +25,8 @@
 int maxPID;
 char *filename = "server_info.txt";
 pthread_mutex_t lock;
+int tcount=0;
+
 
 
 struct process
@@ -60,7 +62,7 @@ void printProcess(struct process p)
 	return;
 }
 
-void writeNprocesses (int N, char* filename)
+void writeNprocesses (int N, char* filename, int myCLientNo)
 {
 	int n;
 	FILE *fp;
@@ -73,14 +75,14 @@ void writeNprocesses (int N, char* filename)
 		sprintf(p_info, "%s %s %d", processList[i].pid, processList[i].name, processList[i].cputime);
 		fprintf(fp, "%s\n", p_info);
 	}
-	printf("[+] Top processes written\n");
+	printf("[+] (%d) Top processes written\n", myCLientNo);
 
 	fclose(fp);
 
 	return;
 }
 
-void findProcess()
+void findProcess(int myCLientNo)
 {
 	int n,i=1;
 	char data[SIZE] = {0};
@@ -155,7 +157,7 @@ void findProcess()
 	int size = sizeof(processList) / sizeof(processList[0]);
 	qsort((void*)processList, size, sizeof(struct process), comparator);
 
-	printf("\n[+] Processes sorted\n");
+	printf("\n[+] (%d) Processes sorted\n", myCLientNo);
 	// for (int i = 0; i < 1000; i++)
 	// {
 	// 	printf("i=%d ",i+1);
@@ -166,11 +168,12 @@ void findProcess()
 }
 
 
-void * clientThread (void * arg1) //, void * arg2
+void * clientThread (void * arg) //, void * arg2
 {
 	// int* myTID = (int*) arg1;
-	int mySockFD = *((int*) arg1);
-	int myClientNo = 0;
+	int mySockFD = *((int*) arg);
+	// arg++;
+	int myClientNo = tcount;
 
 	int recvVal;
 	char *hello = "Hello from server";
@@ -188,12 +191,12 @@ void * clientThread (void * arg1) //, void * arg2
 	//Receiving request for N proceses
 	recvVal = recv (mySockFD, strN, 10, 0);
 	N = atoi(strN);
-	printf("[+] Received request: %d\n", N);
+	printf("[+] (%d) Received request: %d\n", myClientNo, N);
 
 	pthread_mutex_lock(&lock);
 
-	findProcess();
-	writeNprocesses(N, filename);
+	findProcess(myClientNo);
+	writeNprocesses(N, filename, myClientNo);
 
 	sprintf(cmd, "cat %s", filename);
 	system(cmd);
@@ -226,7 +229,7 @@ void * clientThread (void * arg1) //, void * arg2
 	        // }
 	    }
 		fclose(fp);
-	    printf("[+] File sent\n");
+	    printf("[+] (%d) File sent\n", myClientNo);
 
 	}
 	pthread_mutex_unlock(&lock);
@@ -234,15 +237,15 @@ void * clientThread (void * arg1) //, void * arg2
 	
 	//Receiving client message
 	recvVal = recv (mySockFD, buffer, SIZE,0);
-	printf("[+] Received: \"%s\"\n", buffer);
+	printf("[+] (%d) Received: \"%s\"\n", myClientNo,buffer);
 
 	if(close(mySockFD)<0)
 	{
-		printf("[-] Client socket close failed");
+		printf("[-] (%d) Client socket close failed", myClientNo);
 		exit(1);
 	}
 	else {
-		printf("[+] Client socket closed\n\n");
+		printf("[+] (%d) Client socket closed\n\n", myClientNo);
 	}
 	pthread_exit(NULL);
 
@@ -303,7 +306,6 @@ int main(int argc, char const *argv[])
 
 	maxPID = getMaxPid();
 	pthread_t tid[10];
-	int tcount=0;
 
 	while((new_sockfd = accept(sockfd, (struct sockaddr *) &address, (socklen_t *) &addrlen) ) >= 0)
 	{
@@ -320,15 +322,16 @@ int main(int argc, char const *argv[])
 			// arr[0] = new_sockfd;
 			// arr[1] = tcount;
 			// p = arr;
+			//&new_sockfd
 
 			if( pthread_create(&tid[tcount], NULL, clientThread, &new_sockfd) != 0 )
 			{
         		printf("Failed to create thread\n");
 			}
 			else {
-				printf("[+] Client %d thread created (%u)\n", tcount+1, tid[tcount]);
+				printf("[+] Client %d thread created\n", ++tcount );
 			}
-			tcount++;
+			// tcount++;
 		// }
 
 	}

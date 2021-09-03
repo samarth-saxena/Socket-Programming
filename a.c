@@ -20,7 +20,7 @@ int main()
     // Points to the whole array arr.
     ptr = &arr;
      
-    printf("p = %d, ptr = %p\n", *p, ptr);
+    printf("p = %d, ptr = %p\n", *p, *ptr[1]);
      
     p++;
     ptr++;
