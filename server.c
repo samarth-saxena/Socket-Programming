@@ -205,7 +205,7 @@ void * clientThread (void * arg1) //, void * arg2
 	    int n, i=1;
 	    char data[SIZE] = {0};
 
-	    printf("[+] Sending file...\n");
+	    // printf("[+] Sending file...\n");
 
 	    while(fgets(data,SIZE, fp)!=NULL)
 	    {
@@ -297,7 +297,7 @@ int main(int argc, char const *argv[])
 
 	maxPID = getMaxPid();
 	pthread_t tid[10];
-	int i=0;
+	int tcount=0;
 
 	while((new_sockfd = accept(sockfd, (struct sockaddr *) &address, (socklen_t *) &addrlen) ) >= 0)
 	{
@@ -310,14 +310,14 @@ int main(int argc, char const *argv[])
 		// }
 		// else {
 			printf("\n[+] Connection accepted\n");
-			if( pthread_create(&tid[i], NULL, clientThread, &new_sockfd) != 0 )
+			if( pthread_create(&tid[tcount], NULL, clientThread, &new_sockfd) != 0 )
 			{
         		printf("Failed to create thread\n");
 			}
 			else {
-				printf("[+] Client %u thread created\n", tid[i]);
+				printf("[+] Client %d thread created (%u)\n", tcount+1, tid[tcount]);
 			}
-			i++;
+			tcount++;
 		// }
 
 	}

@@ -32,18 +32,18 @@ struct process
 
 int maxPID;
 char *request = "5";
+char *filename = "recvd_info.txt";
 
 
 void receive_file(int sockfd)
 {
 	int n,i=0,lines = atoi(request);
 	FILE *fp;
-	char *filename = "recvd_info.txt";
 	char data[SIZE];
 	char cmd[100];
 
 	fp = fopen(filename, "w");
-	printf("[+] Receiving file...\n");
+	// printf("[+] Receiving file...\n");
 
 	// int recvVal = recv(sockfd, data, SIZE, 0);
 	// if(recvVal<0)
@@ -60,7 +60,7 @@ void receive_file(int sockfd)
 
 	fclose(fp);
 
-	printf("[+] File received\n");
+	printf("[+] File received:\n");
 	sprintf(cmd, "cat %s", filename);
 	system(cmd);
 
