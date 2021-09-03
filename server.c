@@ -155,7 +155,7 @@ void findProcess()
 	int size = sizeof(processList) / sizeof(processList[0]);
 	qsort((void*)processList, size, sizeof(struct process), comparator);
 
-	printf("[+] Processes sorted\n");
+	printf("\n[+] Processes sorted\n");
 	// for (int i = 0; i < 1000; i++)
 	// {
 	// 	printf("i=%d ",i+1);

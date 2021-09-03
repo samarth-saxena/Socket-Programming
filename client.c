@@ -31,10 +31,12 @@ struct process
 }topProcess;
 
 int maxPID;
+char *request = "5";
+
 
 void receive_file(int sockfd)
 {
-	int n,i=1;
+	int n,i=0,lines = atoi(request);
 	FILE *fp;
 	char *filename = "recvd_info.txt";
 	char data[SIZE];
@@ -43,10 +45,17 @@ void receive_file(int sockfd)
 	fp = fopen(filename, "w");
 	printf("[+] Receiving file...\n");
 
-	while(recv(sockfd, data, SIZE, 0) > 0)
+	// int recvVal = recv(sockfd, data, SIZE, 0);
+	// if(recvVal<0)
+	// {
+	//     perror("[-] File receiving error");
+	// }
+	while(i<lines && recv(sockfd, data, SIZE, 0))
 	{
 		fprintf(fp, "%s", data);
-		// printf("    [+] Received line %d\n",i++);
+		// printf("    [+] Received line %d:%s\n",i+1,data);
+		// int recvVal = recv(sockfd, data, SIZE, 0);
+		i++;
 	}
 
 	fclose(fp);
@@ -158,7 +167,6 @@ int main(int argc, char const *argv[])
 	int addrlen = sizeof(address);
 	char buffer[SIZE] = {0};
 	char *hello = "Hello from client";
-	char *request = "5";
 	char message[100];
 
 	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -189,6 +197,7 @@ int main(int argc, char const *argv[])
 	send(sockfd, request, strlen(request), 0);
 	printf("\n[+] Requested: Top %s processes\n", request);
 
+	receive_file(sockfd);
 
 
 	findProcess();
@@ -197,7 +206,6 @@ int main(int argc, char const *argv[])
 	send(sockfd, message, strlen(message), 0);
 	printf("[+] Sent: \"%s\"\n", message);
 
-	receive_file(sockfd);
 	// valread = recv (sockfd, buffer, SIZE,0);
 	// printf("[+] Received: \"%s\"\n", buffer);
 
