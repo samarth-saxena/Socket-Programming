@@ -170,6 +170,7 @@ void * clientThread (void * arg1) //, void * arg2
 {
 	// int* myTID = (int*) arg1;
 	int mySockFD = *((int*) arg1);
+	int myClientNo = 0;
 
 	int recvVal;
 	char *hello = "Hello from server";
@@ -177,12 +178,17 @@ void * clientThread (void * arg1) //, void * arg2
 	char buffer[SIZE] = {0};
 	int N;
 	char cmd[100];
+	char strClientNo[10];
+
+	sprintf(strClientNo, "%d", myClientNo);
+	send(mySockFD, strClientNo, strlen(strClientNo), 0);
+	// printf("[+] Sent: Client no %s \n", strClientNo);
 
 
 	//Receiving request for N proceses
 	recvVal = recv (mySockFD, strN, 10, 0);
 	N = atoi(strN);
-	printf("[+] Received: %d\n", N);
+	printf("[+] Received request: %d\n", N);
 
 	pthread_mutex_lock(&lock);
 
@@ -310,6 +316,11 @@ int main(int argc, char const *argv[])
 		// }
 		// else {
 			printf("\n[+] Connection accepted\n");
+			// int arr[2], *p;
+			// arr[0] = new_sockfd;
+			// arr[1] = tcount;
+			// p = arr;
+
 			if( pthread_create(&tid[tcount], NULL, clientThread, &new_sockfd) != 0 )
 			{
         		printf("Failed to create thread\n");

@@ -30,9 +30,9 @@ struct process
 	int cputime;
 }topProcess;
 
-int maxPID;
+int maxPID, clientNo;
 char *request = "5";
-char *filename = "recvd_info.txt";
+char filename[20];
 
 
 void receive_file(int sockfd)
@@ -192,6 +192,15 @@ int main(int argc, char const *argv[])
 	}
 
 	maxPID = getMaxPid();
+
+	char strClientNo[10];
+	recv (sockfd, strClientNo, 10,0);
+	clientNo = atoi(strClientNo);
+	printf("    Client no: %d\n", clientNo);
+	sprintf(filename, "recvd_info_%d.txt", clientNo);
+
+	// strcat(filename, strClientNo);
+	// strcat(filename, ".txt");
 
 
 	send(sockfd, request, strlen(request), 0);
