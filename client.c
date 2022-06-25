@@ -1,10 +1,7 @@
 /*
 	CLIENT Program
 
-	Assignment 1
-
-	Samarth Saxena
-	Roll no: 2019328
+	@author Samarth Saxena
 */
 
 #include <stdio.h>
